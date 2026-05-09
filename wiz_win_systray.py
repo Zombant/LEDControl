@@ -3,13 +3,15 @@ from PIL import Image, ImageDraw
 import threading
 import os
 
-import ctypes # For Windows
+
 
 import wiz_control
 from wiz_control import devices, scenes, lighting_groups
 
-# Set process name for Windows
-ctypes.windll.kernel32.SetConsoleTitleW("WiZ Control")
+if os.name == 'nt':
+    import ctypes
+    #Set process name for Windows
+    ctypes.windll.kernel32.SetConsoleTitleW("WiZ Control")
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 

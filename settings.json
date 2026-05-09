@@ -5,30 +5,21 @@
             "type": "outlet"
         },
         "marble_lamp": {
-            "ip": "192.168.1.11",
+            "ip": "192.168.1.239",
             "type": "light"
         },
         "black_lamp": {
-            "ip": "192.168.1.12",
+            "ip": "192.168.1.195",
             "type": "light"
         },
         "bookshelf_lamp": {
-            "ip": "192.168.1.13",
-            "type": "light"
-        },
-        "living_room_lamp": {
-            "ip": "192.168.1.152",
-            "type": "light"
-        },
-        "living_room_lamp_2": {
-            "ip": "192.168.1.153",
+            "ip": "192.168.1.196",
             "type": "light"
         }
     },
     
     "lighting_groups": {
-        "living_room": ["living_room_lamp", "living_room_lamp_2"],
         "bedroom": ["marble_lamp", "black_lamp", "bookshelf_lamp"],
-        "all": ["marble_lamp", "black_lamp", "bookshelf_lamp", "living_room_lamp", "living_room_lamp_2"]
+        "all": ["marble_lamp", "black_lamp", "bookshelf_lamp"]
     }
 }
