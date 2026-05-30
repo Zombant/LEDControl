@@ -125,12 +125,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Control Wiz lights")
     subparsers = parser.add_subparsers(dest="command")
 
-    list_parser = subparsers.add_parser("list", help="List devices or scenes")
+    list_parser = subparsers.add_parser("list", help="List devices, scenes, or groups")
     list_parser.add_argument("type", choices=["devices", "scenes", "groups"], help="Type to list")
 
     device_parser = subparsers.add_parser("control", help="Control a device")
     device_parser.add_argument("name", help="Device name")
-    device_parser.add_argument("action", choices=["state", "dimmer", "rgb", "temp", "scene", "status"], help="Action to perform")
+    device_parser.add_argument("action", choices=["state", "brightness", "rgb", "temp", "scene", "status"], help="Action to perform")
     device_parser.add_argument("params", nargs="*", help="Parameters for the action")
 
     args = parser.parse_args()
@@ -147,6 +147,7 @@ if __name__ == "__main__":
 
     elif args.command == "control":
         if args.name not in devices:
+            print(f"{args.name} is not a valid device")
             print_help(parser)
 
         if args.action == "state":
@@ -155,7 +156,7 @@ if __name__ == "__main__":
             state = args.params[0] == "on"
             set_light_state(devices[args.name]['ip'], state)
 
-        elif args.action == "dimmer":
+        elif args.action == "brightness":
             if len(args.params) != 1:
                 print_help(parser)
             set_light_dimming(devices[args.name]['ip'], int(args.params[0]))

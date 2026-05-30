@@ -31,6 +31,7 @@ def test_result_code(result_code, title):
 
 ################################################################
 ## These functions actually perform the action on the devices ##
+## Here is where the action is chosen for the service         ##
 ################################################################
 
 def set_state(devices_list, state):
@@ -92,56 +93,55 @@ def set_intensity(devices_list, speed):
 ###########################################
 ## Helper functions to create menu items ##
 ###########################################
-# TODO: the duplicate functions for device/group can probably be combined
 
 # Scenes
-def create_group_scene_menu_item(group, scene):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene(lighting_groups[group], wiz_scenes[scene]))
-
-def create_device_scene_menu_item(device, scene):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene([device], wiz_scenes[scene])) 
+def create_scene_select_menu_item(devices, scene):
+        return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene(devices, wiz_scenes[scene]))
 
 # Brightness
-def create_group_brightness_menu_item(group, brightness):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(f"{brightness}%", lambda: set_brightness(lighting_groups[group], brightness))
-
-def create_device_brightness_menu_item(device, brightness):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(f"{brightness}%", lambda: set_brightness([device], brightness))
+def create_brightness_select_menu_item(devices, brightness):
+        return pystray.MenuItem(f"{brightness}%", lambda: set_brightness(devices, brightness))
 
 # Palettes
-def create_device_palette_menu_item(device, palette_name, palette_idx):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(palette_name.replace('_', ' ').title(), lambda: set_palette([device], palette_idx))
+def create_palette_select_menu_item(devices, palette_name, palette_idx):
+        return pystray.MenuItem(palette_name.replace('_', ' ').title(), lambda: set_palette(devices, palette_idx))
 
 # Effects
-def create_device_effect_menu_item(device, effect_name, effect_idx):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(effect_name.replace('_', ' ').title(), lambda: set_effect([device], effect_idx))
+def create_effect_select_menu_item(devices, effect_name, effect_idx):
+        return pystray.MenuItem(effect_name.replace('_', ' ').title(), lambda: set_effect(devices, effect_idx))
 
 # Effect speed
-def create_device_effect_speed_menu_item(device, speed):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(f"{speed}%", lambda: set_speed([device], speed))
+def create_speed_select_menu_item(devices, speed):
+        return pystray.MenuItem(f"{speed}%", lambda: set_speed(devices, speed))
 
 # Effect intensity
-def create_device_effect_intensity_menu_item(device, intensity):
-    if devices[device]['type'] == 'light':
-        return pystray.MenuItem(f"{intensity}%", lambda: set_intensity([device], intensity))
+def create_intensity_select_menu_item(devices, intensity):
+        return pystray.MenuItem(f"{intensity}%", lambda: set_intensity(devices, intensity))
 
 # Menu for a group
 def create_group_menu_item(group):
+    first_wled_ip = next((info["ip"] for info in devices.values() if info.get("service") == "wled"), None)
     return pystray.MenuItem(group.replace('_', ' ').title(), pystray.Menu(
         pystray.MenuItem(f"{group.replace('_', ' ').title()} On", lambda: set_state(lighting_groups[group], True)),
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Off", lambda: set_state(lighting_groups[group], False)),
-        pystray.MenuItem(f"{group.replace('_', ' ').title()} Scene", pystray.Menu(
-            *[create_group_scene_menu_item(group, scene) for scene in wiz_scenes]
-        )),
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Brightness", pystray.Menu(
-            *[create_group_brightness_menu_item(group, brightness) for brightness in range(10, 101, 10)]
+            *[create_brightness_select_menu_item(lighting_groups[group], brightness) for brightness in range(10, 101, 10)]
+        )),
+        # This assumes all WLEDs have the same set of palettes and effects
+        pystray.MenuItem(f"{group.replace('_', ' ').title()} Scene", pystray.Menu(
+            *[create_scene_select_menu_item(lighting_groups[group], scene) for scene in wiz_scenes]
+        )),
+        pystray.MenuItem(f"{group.replace('_', ' ').title()} Palette", pystray.Menu(
+            *[create_palette_select_menu_item(lighting_groups[group], palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(first_wled_ip))]
+        )),
+        pystray.MenuItem(f"{group.replace('_', ' ').title()} Effect", pystray.Menu(
+            *[create_effect_select_menu_item(lighting_groups[group], effect_name, effect_idx) for effect_idx, effect_name in enumerate(wled_control.get_light_effects(first_wled_ip))]
+        )),
+        pystray.MenuItem(f"{group.replace('_', ' ').title()} Speed", pystray.Menu(
+            *[create_speed_select_menu_item(lighting_groups[group], speed) for speed in range(10, 101, 10)]
+        )),
+        pystray.MenuItem(f"{group.replace('_', ' ').title()} Intensity", pystray.Menu(
+            *[create_intensity_select_menu_item(lighting_groups[group], intensity) for intensity in range(10, 101, 10)]
         ))
     ))
 
@@ -151,27 +151,26 @@ def create_device_menu_item(device):
     menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} On", lambda: set_state([device], True)))
     menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Off", lambda: set_state([device], False)))
     if devices[device]['type'] == 'light':
+        menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Brightness", pystray.Menu(
+            *[create_brightness_select_menu_item([device], brightness) for brightness in range(10, 101, 10)]
+        )))
         if devices[device]['service'] == "wiz":
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Scene", pystray.Menu(
-                *[create_device_scene_menu_item(device, scene) for scene in wiz_scenes]
+                *[create_scene_select_menu_item([device], scene) for scene in wiz_scenes]
             )))
         elif devices[device]['service'] == "wled":
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Palette", pystray.Menu(
-                *[create_device_palette_menu_item(device, palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(devices[device]['ip']))]
+                *[create_palette_select_menu_item([device], palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(devices[device]['ip']))]
             )))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Effect", pystray.Menu(
-                *[create_device_effect_menu_item(device, effect_name, effect_idx) for effect_idx, effect_name in enumerate(wled_control.get_light_effects(devices[device]['ip']))]
+                *[create_effect_select_menu_item([device], effect_name, effect_idx) for effect_idx, effect_name in enumerate(wled_control.get_light_effects(devices[device]['ip']))]
             )))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Speed", pystray.Menu(
-                *[create_device_effect_speed_menu_item(device, speed) for speed in range(10, 101, 10)]
+                *[create_speed_select_menu_item([device], speed) for speed in range(10, 101, 10)]
             )))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Intensity", pystray.Menu(
-                *[create_device_effect_intensity_menu_item(device, intensity) for intensity in range(10, 101, 10)]
+                *[create_intensity_select_menu_item([device], intensity) for intensity in range(10, 101, 10)]
             )))
-
-        menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Brightness", pystray.Menu(
-            *[create_device_brightness_menu_item(device, brightness) for brightness in range(10, 101, 10)]
-        )))
     return pystray.MenuItem(device.replace('_', ' ').title(), pystray.Menu(*menu))
 
 # Function to setup the system tray icon
