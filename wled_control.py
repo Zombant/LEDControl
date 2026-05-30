@@ -58,12 +58,42 @@ def get_light_effects(ip):
         print(f"Failed to get effects for {ip}: {e}")
         return None
 
-def set_light_effect(ip, effect_idx, effect_speed=100, effect_intensity=255):
+def set_light_effect(ip, effect_idx, effect_speed, effect_intensity):
     payload = {
         "seg": [
             {
                 "fx": int(effect_idx),
                 "sx": int(effect_speed),
+                "ix": int(effect_intensity)
+            }
+        ]
+    }
+    send_command(ip, payload)
+
+def set_light_effect(ip, effect_idx):
+    payload = {
+        "seg": [
+            {
+                "fx": int(effect_idx)
+            }
+        ]
+    }
+    send_command(ip, payload)
+
+def set_effect_speed(ip, effect_speed):
+    payload = {
+        "seg": [
+            {
+                "sx": int(effect_speed)
+            }
+        ]
+    }
+    send_command(ip, payload)
+
+def set_effect_intensity(ip, effect_intensity):
+    payload = {
+        "seg": [
+            {
                 "ix": int(effect_intensity)
             }
         ]
