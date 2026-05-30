@@ -5,7 +5,12 @@ import os
 import wiz_control
 from wiz_control import scenes as wiz_scenes
 import wled_control
+import openrgb_control
 from common import devices, lighting_groups
+from openrgb import OpenRGBClient
+from openrgb.utils import RGBColor, DeviceType
+import socket
+
 
 if os.name == 'nt':
     import ctypes
@@ -15,6 +20,54 @@ if os.name == 'nt':
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 icon = None
+
+openrgb_client = None
+
+# Define RGB values to match WiZ scenes
+# A scene is essentially a preset color
+# TODO: Omit id to indicate to WiZ to use the RGB values, not the id for custom presets
+WIZ_SCENES = {
+    "cozy": {
+        "id": 6, 
+        "r": 255, "g": 147, "b": 41
+    },
+    "warm_white": {
+        "id": 11, 
+        "r": 255, "g": 162, "b": 70
+    },
+    "daylight": {
+        "id": 12, 
+        "r": 255, "g": 180, "b": 107
+    },
+    "cool_white": {
+        "id": 13, 
+        "r": 255, "g": 232, "b": 214
+    },
+    "night_light": {
+        "id": 14, 
+        "r": 48, "g": 27, "b": 8
+    },
+    "focus": {
+        "id": 15, 
+        "r": 255, "g": 244, "b": 148
+    },
+    "relax": {
+        "id": 16, 
+        "r": 255, "g": 84, "b": 115
+    },
+    "true_colors": {
+        "id": 17, 
+        "r": 255, "g": 152, "b": 49
+    },
+    "tv_time": {
+        "id": 18, 
+        "r": 56, "g": 32, "b": 145
+    },
+    "plant_growth": {
+        "id": 19, 
+        "r": 215, "g": 0, "b": 155
+    }
+}
 
 # Load light bulb image for the system tray icon
 def create_light_bulb_image(height, width):
@@ -41,6 +94,9 @@ def set_state(devices_list, state):
             test_result_code(result_code, device.replace('_', ' ').title())
         elif devices[device]['service'] == "wled":
             wled_control.set_light_state(devices[device]['ip'], state)
+        elif devices[device]['service'] == "openrgb":
+            # TODO: may not necessarily be motherboard
+            openrgb_control.set_state(openrgb_client.get_devices_by_name(devices[device]['ip'])[0], state)
 
 def set_brightness(devices_list, brightness):
     for device in devices_list:
@@ -52,7 +108,7 @@ def set_brightness(devices_list, brightness):
         elif devices[device]['service'] == "wled":
             wled_control.set_light_brightness(devices[device]['ip'], (((brightness - 0) / (100 - 0)) * (255 - 0)))
 
-# Scenes are only available on wiz devices
+# Scenes are only available on wiz devices but are emulated for RGB devices
 def set_scene(devices_list, scene_id):
     for device in devices_list:
         if devices[device]['type'] != "light":
@@ -60,6 +116,12 @@ def set_scene(devices_list, scene_id):
         if devices[device]['service'] == "wiz":
             result_code = wiz_control.set_light_scene(devices[device]['ip'], scene_id)
             test_result_code(result_code, device.replace('_', ' ').title())
+        elif devices[device]['service'] == "wled":
+            r, g, b = next((d["r"], d["g"], d["b"]) for d in WIZ_SCENES.values() if d["id"] == scene_id)
+            wled_control.set_light_rgb(devices[device]['ip'], r, g, b)
+        elif devices[device]['service'] == "openrgb":
+            r, g, b = next((d["r"], d["g"], d["b"]) for d in WIZ_SCENES.values() if d["id"] == scene_id)
+            openrgb_control.set_rgb(openrgb_client.get_devices_by_type(DeviceType.MOTHERBOARD)[0], r, g, b)
 
 # Palettes and effects are only available on WLED devices
 def set_palette(devices_list, palette_idx):
@@ -127,10 +189,12 @@ def create_group_menu_item(group):
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Brightness", pystray.Menu(
             *[create_brightness_select_menu_item(lighting_groups[group], brightness) for brightness in range(10, 101, 10)]
         )),
-        # This assumes all WLEDs have the same set of palettes and effects
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Scene", pystray.Menu(
             *[create_scene_select_menu_item(lighting_groups[group], scene) for scene in wiz_scenes]
         )),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem('WLED Only', None, enabled=False),
+        # This assumes all WLEDs have the same set of palettes and effects
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Palette", pystray.Menu(
             *[create_palette_select_menu_item(lighting_groups[group], palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(first_wled_ip))]
         )),
@@ -154,11 +218,12 @@ def create_device_menu_item(device):
         menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Brightness", pystray.Menu(
             *[create_brightness_select_menu_item([device], brightness) for brightness in range(10, 101, 10)]
         )))
-        if devices[device]['service'] == "wiz":
-            menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Scene", pystray.Menu(
-                *[create_scene_select_menu_item([device], scene) for scene in wiz_scenes]
-            )))
-        elif devices[device]['service'] == "wled":
+        menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Scene", pystray.Menu(
+            *[create_scene_select_menu_item([device], scene) for scene in wiz_scenes]
+        )))
+        if devices[device]['service'] == "wled":
+            menu.append(pystray.Menu.SEPARATOR)
+            menu.append(pystray.MenuItem('WLED Only', None, enabled=False))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Palette", pystray.Menu(
                 *[create_palette_select_menu_item([device], palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(devices[device]['ip']))]
             )))
@@ -200,5 +265,20 @@ def setup_tray():
 
 # Run the system tray icon in a separate thread
 if __name__ == "__main__":
+    
+    # Set up OpenRGB
+    openrgb_control.start_openrgb_server()
+
+    max_attempts = 10
+    attempt = 0
+    while attempt < max_attempts:
+        try:
+            openrgb_client = OpenRGBClient()
+            print("OpenRGB Connected")
+            break
+        except (ConnectionRefusedError, socket.timeout):
+            attempt += 1
+            time.sleep(0.5)
+
     tray_thread = threading.Thread(target=setup_tray)
     tray_thread.start()
