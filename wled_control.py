@@ -142,15 +142,15 @@ def list_effects(device):
     if device not in devices.keys():
         print(f"{device} is not a valid device")
         return
-    for name in get_light_effects(devices[device]["ip"]):
-        print(name)
+    for idx, name in enumerate(get_light_effects(devices[device]["ip"])):
+        print(f"{idx}. {name}")
 
 def list_palettes(device):
     if device not in devices.keys():
         print(f"{device} is not a valid device")
         return
-    for name in get_light_palettes(devices[device]["ip"]):
-        print(name)
+    for idx, name in enumerate(get_light_palettes(devices[device]["ip"])):
+        print(f"{idx}. {name}")
 
 def list_groups():
     for name, _ in lighting_groups.items():
@@ -220,7 +220,15 @@ if __name__ == "__main__":
                 print_help(parser)
             set_light_temp(ip, int(args.params[0]))
         
-        ## TODO: Effects and palettes
+        elif args.action == "effect":
+            if len(args.params) != 1:
+                print_help(parser)
+            set_light_effect(ip, int(args.params[0]))
+        
+        elif args.action == "palette":
+            if len(args.params) != 1:
+                print_help(parser)
+            set_light_palette(ip, int(args.params[0]))
         
         elif args.action == "speed":
             if len(args.params) != 1:
