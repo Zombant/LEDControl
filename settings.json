@@ -2,24 +2,33 @@
     "devices": {
         "outlet": {
             "ip": "192.168.1.253",
-            "type": "outlet"
+            "type": "outlet",
+            "service": "wiz"
         },
         "marble_lamp": {
             "ip": "192.168.1.239",
-            "type": "light"
+            "type": "light",
+            "service": "wiz"
         },
         "black_lamp": {
             "ip": "192.168.1.195",
-            "type": "light"
+            "type": "light",
+            "service": "wiz"
         },
         "bookshelf_lamp": {
             "ip": "192.168.1.196",
-            "type": "light"
+            "type": "light",
+            "service": "wiz"
+        },
+        "led_bar": {
+            "ip": "192.168.1.216",
+            "type": "light",
+            "service": "wled"
         }
     },
     
     "lighting_groups": {
-        "bedroom": ["marble_lamp", "black_lamp", "bookshelf_lamp"],
-        "all": ["marble_lamp", "black_lamp", "bookshelf_lamp"]
+        "bedroom": ["marble_lamp", "black_lamp", "bookshelf_lamp", "led_bar"],
+        "all": ["marble_lamp", "black_lamp", "bookshelf_lamp", "led_bar"]
     }
 }

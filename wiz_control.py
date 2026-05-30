@@ -4,20 +4,17 @@ import socket
 import json
 from time import sleep
 import sys
-import os
 import argparse
+
+from common import devices, lighting_groups
 
 retry_count = 5
 
-# Path to the settings.json file
-script_dir = os.path.dirname(os.path.abspath(__file__))
-settings_path = os.path.join(script_dir, "settings.json")
-
-# Import IP addresses from json file
-with open(settings_path, "r") as f:
-    data = json.load(f)
-    devices = data["devices"]
-    lighting_groups = data["lighting_groups"]
+# Filter for only wiz devices
+devices = {
+    name: details for name, details in devices.items() 
+    if details.get("service") == "wiz"
+}
 
 scenes = {
     "cozy": 6,
@@ -119,8 +116,6 @@ def list_scenes():
 def list_groups():
     for name, _ in lighting_groups.items():
         print(name)
-
-# TODO: List groups
 
 def print_help(parser):
     parser.print_help()

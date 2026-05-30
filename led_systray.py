@@ -2,16 +2,15 @@ import pystray
 from PIL import Image, ImageDraw
 import threading
 import os
-
-
-
 import wiz_control
-from wiz_control import devices, scenes, lighting_groups
+from wiz_control import scenes as wiz_scenes
+import wled_control
+from common import devices, lighting_groups
 
 if os.name == 'nt':
     import ctypes
     #Set process name for Windows
-    ctypes.windll.kernel32.SetConsoleTitleW("WiZ Control")
+    ctypes.windll.kernel32.SetConsoleTitleW("LED Control")
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,14 +25,18 @@ def test_result_code(result_code, title):
 
 def set_state(devices_list, state):
     for device in devices_list:
-        result_code = wiz_control.set_light_state(devices[device]['ip'], state)
-        test_result_code(result_code, device.replace('_', ' ').title())
+        if devices[device]['service'] == "wiz":
+            result_code = wiz_control.set_light_state(devices[device]['ip'], state)
+            test_result_code(result_code, device.replace('_', ' ').title())
+        elif devices[device]['service'] == "wled":
+            wled_control.set_light_state(devices[device]['ip'], state)
 
 def set_scene(devices_list, scene_id):
     for device in devices_list:
         result_code = wiz_control.set_light_scene(devices[device]['ip'], scene_id)
         test_result_code(result_code, device.replace('_', ' ').title())
 
+# TODO: Dimmer to be 0-100, and will be remapped to 0-255 for wiz
 def set_dimmer(devices_list, dimmer):
     for device in devices_list:
         result_code = wiz_control.set_light_dimming(devices[device]['ip'], dimmer)
@@ -47,12 +50,12 @@ def create_light_bulb_image(height, width):
 
 # Helper function to create a menu item for a scene for a group
 def create_group_scene_menu_item(group, scene):
-    return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene(lighting_groups[group], scenes[scene]))
+    return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene(lighting_groups[group], wiz_scenes[scene]))
 
 # Helper function to create a menu item for a scene for a device
 def create_device_scene_menu_item(device, scene):
     if devices[device]['type'] == 'light':
-        return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene([device], scenes[scene])) 
+        return pystray.MenuItem(scene.replace('_', ' ').title(), lambda: set_scene([device], wiz_scenes[scene])) 
 
 def create_device_dimmer_menu_item(device, dimmer):
     if devices[device]['type'] == 'light':
@@ -67,7 +70,7 @@ def create_group_menu_item(group):
         pystray.MenuItem(f"{group.replace('_', ' ').title()} On", lambda: set_state(lighting_groups[group], True)),
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Off", lambda: set_state(lighting_groups[group], False)),
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Scene", pystray.Menu(
-            *[create_group_scene_menu_item(group, scene) for scene in scenes]
+            *[create_group_scene_menu_item(group, scene) for scene in wiz_scenes]
         )),
         pystray.MenuItem(f"{group.replace('_', ' ').title()} Dimmer", pystray.Menu(
             *[create_group_dimmer_menu_item(group, dimmer) for dimmer in range(10, 101, 10)]
@@ -80,9 +83,14 @@ def create_device_menu_item(device):
     menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} On", lambda: set_state([device], True)))
     menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Off", lambda: set_state([device], False)))
     if devices[device]['type'] == 'light':
-        menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Scene", pystray.Menu(
-            *[create_device_scene_menu_item(device, scene) for scene in scenes]
-        )))
+        if devices[device]['service'] == "wiz":
+            menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Scene", pystray.Menu(
+                *[create_device_scene_menu_item(device, scene) for scene in wiz_scenes]
+            )))
+        elif devices[device]['service'] == "wled":
+            # TODO: Create menu items for palettes and effects, with speed and intensity
+            pass
+
         menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Dimmer", pystray.Menu(
             *[create_device_dimmer_menu_item(device, dimmer) for dimmer in range(10, 101, 10)]
         )))
