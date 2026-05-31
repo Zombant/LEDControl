@@ -6,7 +6,7 @@ from time import sleep
 import sys
 import argparse
 
-from common import devices, lighting_groups
+from common import devices, scenes, lighting_groups
 
 retry_count = 5
 
@@ -16,20 +16,11 @@ devices = {
     if details.get("service") == "wiz"
 }
 
+# Filter for only WiZ scenes
 scenes = {
-    "cozy": 6,
-    "warm_white": 11,
-    "daylight": 12,
-    "cool_white": 13,
-    "night_light": 14,
-    "focus": 15,
-    "relax": 16,
-    "true_colors": 17,
-    "tv_time": 18,
-    "plant_growth": 19 }
-
-# TODO: Create/modify/delete lighting groups
-# TODO: Create/modify/delete devices
+    name: details for name, details in scenes.items() 
+    if details.get("wiz_id") != -1
+}
 
 def send_command(message, ip, port=38899, retries=retry_count):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,13 +51,12 @@ def set_light_state(ip, state):
     return send_command(message, ip)
     
 
-def set_light_rgb(ip, r, g, b, dimming=100):
+def set_light_rgb(ip, r, g, b):
     message = {
         "method": "setPilot",
         "params": { "r": r,
                     "g": g,
-                    "b": b,
-                    "dimming": dimming}
+                    "b": b}
     }
     
     return send_command(message, ip)

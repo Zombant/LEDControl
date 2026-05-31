@@ -8,3 +8,4 @@ with open(settings_path, "r") as f:
     data = json.load(f)
     devices = data["devices"]
     lighting_groups = data["lighting_groups"]
+    scenes = data["scenes"]
