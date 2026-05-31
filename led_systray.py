@@ -118,6 +118,7 @@ def set_scene(devices_list, scene_id):
             test_result_code(result_code, device.replace('_', ' ').title())
         elif devices[device]['service'] == "wled":
             r, g, b = next((d["r"], d["g"], d["b"]) for d in WIZ_SCENES.values() if d["id"] == scene_id)
+            wled_control.set_light_effect(devices[device]['ip'], 0) # Set effect to "Solid"
             wled_control.set_light_rgb(devices[device]['ip'], r, g, b)
         elif devices[device]['service'] == "openrgb":
             r, g, b = next((d["r"], d["g"], d["b"]) for d in WIZ_SCENES.values() if d["id"] == scene_id)
