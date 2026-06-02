@@ -101,7 +101,7 @@ def get_light_state(ip):
         
         return response.json()
         
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
         print(f"Failed to get status for {ip}: {e}")
         return None
 

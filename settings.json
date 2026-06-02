@@ -3,7 +3,8 @@
         "outlet": {
             "ip": "192.168.1.253",
             "type": "outlet",
-            "service": "wiz"
+            "service": "wiz",
+            "enabled": false
         },
         "marble_lamp": {
             "ip": "192.168.1.239",
@@ -35,6 +36,7 @@
     "lighting_groups": {
         "bedroom": ["marble_lamp", "black_lamp", "bookshelf_lamp", "led_bar", "motherboard"],
         "wiz": ["marble_lamp", "black_lamp", "bookshelf_lamp"],
+        "wled": ["led_bar"],
         "all": ["marble_lamp", "black_lamp", "bookshelf_lamp", "led_bar", "motherboard"]
     },
 

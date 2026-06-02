@@ -87,13 +87,13 @@ def set_light_dimming(ip, dimming):
 
     return send_command(message, ip)
 
-def get_light_status(ip):
+def get_light_status(ip, retries=retry_count):
     message = {
         "method": "getPilot",
         "params": { }
     }
 
-    return send_command(message, ip)
+    return send_command(message, ip, retries=retry_count)
 
 def list_devices():
     for name, _ in devices.items():

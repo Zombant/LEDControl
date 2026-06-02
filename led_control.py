@@ -39,6 +39,30 @@ def start_openrgb_server(max_attempts=10):
 ## in the given list, regardless of the service it uses.      ##
 ################################################################
 
+def is_online(device):
+    if devices[device]['service'] == "wiz":
+        result_code = wiz_control.get_light_status(devices[device]['ip'])
+        if result_code == 1 or result_code == 2:
+            print(f"{device} is not online or not responding")
+            return False
+        else:
+            return True
+    elif devices[device]['service'] == "wled":
+        result = wled_control.get_light_state(devices[device]['ip'])
+        if result == None:
+            print(f"{device} is not online or not responding")
+            return False
+        else:
+            return True
+    elif devices[device]['service'] == "openrgb":
+        devices_list = openrgb_client.get_devices_by_name(devices[device]['ip'])
+        if len(devices_list) == 0:
+            return False
+        else:
+            return True
+    else:
+        return None
+
 def set_state(devices_list, state):
     for device in devices_list:
         if devices[device]['service'] == "wiz":
