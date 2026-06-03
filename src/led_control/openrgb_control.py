@@ -47,6 +47,15 @@ def set_state(device, state):
     else:
         device.set_color(RGBColor(0, 0, 0))
 
+def get_state(device):
+    if all(colors == RGBColor(0, 0, 0) for colors in device.colors):
+        return False
+    else:
+        return True
+
+def get_rgb(device):
+    return (device.colors[0].red, device.colors[0].green, device.colors[0].blue)
+
 def set_rgb(device, r, g, b):
     device.set_color(RGBColor(r, g, b))
 

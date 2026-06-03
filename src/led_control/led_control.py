@@ -48,7 +48,7 @@ def is_online(device):
         else:
             return True
     elif devices[device]['service'] == "wled":
-        result = wled_control.get_light_state(devices[device]['ip'])
+        result = wled_control.get_light_status(devices[device]['ip'])
         if result == None:
             print(f"{device} is not online or not responding")
             return False
@@ -63,11 +63,93 @@ def is_online(device):
     else:
         return None
 
+
+## Getters
+
+def get_devices():
+    return devices.items()
+
+def get_groups():
+    return lighting_groups.items()
+
+def get_scenes():
+    return scenes.items()
+
 def get_paletttes(device):
-    return wled_control.get_light_palettes(devices[device]['ip'])
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_palettes(devices[device]['ip'])
+    else:
+        return []
 
 def get_effects(device):
-    return wled_control.get_light_effects(devices[device]['ip'])
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_effects(devices[device]['ip'])
+    else:
+        return []
+
+def get_state(device):
+    if devices[device]['service'] == "wiz":
+        return wiz_control.get_light_state(devices[device]['ip'])
+    elif devices[device]['service'] == "wled":
+        return wled_control.get_light_state(devices[device]['ip'])
+    elif devices[device]['service'] == "openrgb":
+        return openrgb_control.get_state(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
+    else:
+        return None
+
+def get_rgb(device):
+    if devices[device]['service'] == "wiz":
+        return wiz_control.get_light_rgb(devices[device]['ip'])
+    elif devices[device]['service'] == "wled":
+        return wled_control.get_light_rgb(devices[device]['ip'])
+    elif devices[device]['service'] == "openrgb":
+        return openrgb_control.get_rgb(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
+    else:
+        return None
+
+def get_scene(device):
+    if devices[device]['service'] == "wiz":
+        return wiz_control.get_light_scene(devices[device]['ip'])
+    else:
+        return None
+
+def get_brightness(device):
+    if devices[device]['service'] == "wiz":
+        return wiz_control.get_light_brightness(devices[device]['ip'])
+    elif devices[device]['service'] == "wled":
+        bri = wled_control.get_light_brightness(devices[device]['ip'])
+        return int((((bri - 0) / (255 - 0)) * (100 - 0)))
+    elif devices[device]['service'] == "openrgb":
+        return NotImplementedError
+    else:
+        return None
+
+def get_effect(device):
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_effect(devices[device]['ip'])
+    else:
+        return None
+
+def get_palette(device):
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_palette(devices[device]['ip'])
+    else:
+        return None
+
+def get_speed(device):
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_speed(devices[device]['ip'])
+    else:
+        return None
+
+def get_intensity(device):
+    if devices[device]['service'] == "wled":
+        return wled_control.get_light_intensity(devices[device]['ip'])
+    else:
+        return None
+
+
+## Setters
 
 def set_state(devices_list, state):
     for device in devices_list:
@@ -84,10 +166,15 @@ def set_brightness(devices_list, brightness):
         if devices[device]['type'] != "light":
             continue
         if devices[device]['service'] == "wiz":
-            result_code = wiz_control.set_light_dimming(devices[device]['ip'], brightness)
+            result_code = wiz_control.set_light_brightness(devices[device]['ip'], brightness)
             #test_result_code(result_code, device.replace('_', ' ').title())
         elif devices[device]['service'] == "wled":
             wled_control.set_light_brightness(devices[device]['ip'], (((brightness - 0) / (100 - 0)) * (255 - 0)))
+        elif devices[device]['service'] == "openrgb":
+            return NotImplementedError
+
+def set_rgb(devices_list, brightness):
+    raise NotImplementedError
 
 # Scenes are only available on wiz devices but are emulated for RGB devices
 def set_scene(devices_list, scene_data):

@@ -1,3 +1,4 @@
 pystray
 argparse
 openrgb
+fastapi

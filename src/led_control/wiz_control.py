@@ -40,6 +40,52 @@ def send_command(message, ip, port=38899, retries=retry_count):
     sock.close()
     print(f"Failed to send command after {retries} attempts", file=sys.stderr)
     return 2
+
+
+def get_light_status(ip, retries=retry_count):
+    message = {
+        "method": "getPilot",
+        "params": { }
+    }
+
+    return send_command(message, ip, retries=retry_count)
+
+def get_light_state(ip, retries=retry_count):
+    message = {
+        "method": "getPilot",
+        "params": { }
+    }
+
+    result = send_command(message, ip, retries=retry_count)
+    return result['result']['state']
+
+def get_light_brightness(ip, retries=retry_count):
+    message = {
+        "method": "getPilot",
+        "params": { }
+    }
+
+    result = send_command(message, ip, retries=retry_count)
+    return result['result']['dimming']
+
+def get_light_rgb(ip, retries=retry_count):
+    message = {
+        "method": "getPilot",
+        "params": { }
+    }
+
+    result = send_command(message, ip, retries=retry_count)
+    #TODO: may not have an rgb
+    return (result['result']['r'], result['result']['g'], result['result']['b'])
+
+def get_light_scene(ip, retries=retry_count):
+    message = {
+        "method": "getPilot",
+        "params": { }
+    }
+
+    result = send_command(message, ip, retries=retry_count)
+    return result['result']['sceneId']
         
 
 def set_light_state(ip, state):
@@ -79,21 +125,13 @@ def set_light_scene(ip, scene_id, dimming=100):
 
     return send_command(message, ip)
 
-def set_light_dimming(ip, dimming):
+def set_light_brightness(ip, brightness):
     message = {
         "method": "setPilot",
-        "params": { "dimming": dimming }
+        "params": { "dimming": brightness }
     }
 
     return send_command(message, ip)
-
-def get_light_status(ip, retries=retry_count):
-    message = {
-        "method": "getPilot",
-        "params": { }
-    }
-
-    return send_command(message, ip, retries=retry_count)
 
 def list_devices():
     for name, _ in devices.items():
@@ -149,7 +187,7 @@ if __name__ == "__main__":
         elif args.action == "brightness":
             if len(args.params) != 1:
                 print_help(parser)
-            set_light_dimming(devices[args.name]['ip'], int(args.params[0]))
+            set_light_brightness(devices[args.name]['ip'], int(args.params[0]))
 
         elif args.action == "rgb":
             if len(args.params) < 3 or len(args.params) > 4:

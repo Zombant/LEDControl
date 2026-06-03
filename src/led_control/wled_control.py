@@ -22,9 +22,39 @@ def send_command(ip, payload):
     except:
         print("Failed to send command")
 
-def set_light_state(ip, state):
-    payload = {"on": state}
-    send_command(ip, payload)
+def get_light_status(ip):
+    try:
+        response = requests.get(f"http://{ip}/json/state")
+        response.raise_for_status()
+        
+        return response.json()
+        
+    except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
+        print(f"Failed to get status for {ip}: {e}")
+        return None
+
+def get_light_state(ip):
+    return get_light_status(ip).get("on")
+
+def get_light_brightness(ip):
+    return get_light_status(ip).get("bri")
+
+def get_light_effect(ip):
+    return get_light_status(ip).get("seg")[0].get("fx")
+
+def get_light_palette(ip):
+    return get_light_status(ip).get("seg")[0].get("pal")
+
+def get_light_speed(ip):
+    return get_light_status(ip).get("seg")[0].get("sx")
+
+def get_light_intensity(ip):
+    return get_light_status(ip).get("seg")[0].get("ix")
+
+def get_light_rgb(ip):
+    return get_light_status(ip).get("seg")[0].get("col")[0]
+
+
 
 def get_light_palettes(ip):
     try:
@@ -37,16 +67,6 @@ def get_light_palettes(ip):
         print(f"Failed to get palettes for {ip}: {e}")
         return None
 
-def set_light_palette(ip, palette_idx):
-    payload = {
-        "seg": [
-            {
-                "pal": int(palette_idx)
-            }
-        ]
-    }
-    send_command(ip, payload)
-
 def get_light_effects(ip):
     try:
         response = requests.get(f"http://{ip}/json/eff")
@@ -57,6 +77,20 @@ def get_light_effects(ip):
     except requests.exceptions.RequestException as e:
         print(f"Failed to get effects for {ip}: {e}")
         return None
+
+def set_light_state(ip, state):
+    payload = {"on": state}
+    send_command(ip, payload)
+
+def set_light_palette(ip, palette_idx):
+    payload = {
+        "seg": [
+            {
+                "pal": int(palette_idx)
+            }
+        ]
+    }
+    send_command(ip, payload)
 
 def set_light_effect(ip, effect_idx):
     payload = {
@@ -93,20 +127,6 @@ def set_light_brightness(ip, brightness):
     
     payload = {"bri": brightness}
     send_command(ip, payload)
-
-def get_light_state(ip):
-    try:
-        response = requests.get(f"http://{ip}/json/state")
-        response.raise_for_status()
-        
-        return response.json()
-        
-    except (requests.exceptions.RequestException, requests.exceptions.ConnectionError) as e:
-        print(f"Failed to get status for {ip}: {e}")
-        return None
-
-def get_light_status(ip):
-    get_light_state(ip).get("on")
 
 def set_light_rgb(ip, r, g, b):
     r = max(0, min(255, int(r)))
@@ -241,7 +261,7 @@ if __name__ == "__main__":
             set_effect_intensity(ip, int(args.params[0]))
 
         elif args.action == "status":
-            status = get_light_state(ip)
+            status = get_light_status(ip)
             if status:
                 print(json.dumps(status, indent=4))
         
