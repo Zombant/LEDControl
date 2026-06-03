@@ -2,14 +2,10 @@ import pystray
 from PIL import Image, ImageDraw
 import threading
 import os
-import socket
-
-import led_control
-from led_control import *
-
-import wled_control
 
 from common import devices, scenes, lighting_groups, project_dir
+import led_control
+from led_control import *
 
 if os.name == 'nt':
     import ctypes
@@ -68,9 +64,9 @@ def create_group_menu_item(group_name):
     group_contains_wled = next((True for name, info in devices.items() if info.get("service") == "wled" and name in group_online_devices), False)
     if group_contains_wled:
         # This assumes all WLEDs have the same set of palettes and effects
-        first_wled_ip = next((info["ip"] for info in devices.values() if info.get("service") == "wled"), None)
-        light_palettes = wled_control.get_light_palettes(first_wled_ip)
-        light_effects = wled_control.get_light_effects(first_wled_ip)
+        first_wled_device = next((device_name for device_name, device_info in devices.items() if device_info.get("service") == "wled"), None)
+        light_palettes = led_control.get_paletttes(first_wled_device)
+        light_effects = led_control.get_effects(first_wled_device)
 
     menu = []
 
@@ -105,6 +101,10 @@ def create_device_menu_item(device):
     # Gray out menu item if device is not online
     if device not in online_devices:
         return pystray.MenuItem(device.replace('_', ' ').title(), None, enabled=False)
+
+    if devices[device]['service'] == "wled":
+        light_palettes = led_control.get_paletttes(device)
+        light_effects = led_control.get_effects(device)
     
     menu = []
     menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} On", lambda: set_state([device], True)))
@@ -120,10 +120,10 @@ def create_device_menu_item(device):
             menu.append(pystray.Menu.SEPARATOR)
             menu.append(pystray.MenuItem('WLED Only', None, enabled=False))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Palette", pystray.Menu(
-                *[create_palette_select_menu_item([device], palette_name, palette_idx) for palette_idx, palette_name in enumerate(wled_control.get_light_palettes(devices[device]['ip']))]
+                *[create_palette_select_menu_item([device], palette_name, palette_idx) for palette_idx, palette_name in enumerate(light_palettes)]
             )))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Effect", pystray.Menu(
-                *[create_effect_select_menu_item([device], effect_name, effect_idx) for effect_idx, effect_name in enumerate(wled_control.get_light_effects(devices[device]['ip']))]
+                *[create_effect_select_menu_item([device], effect_name, effect_idx) for effect_idx, effect_name in enumerate(light_effects)]
             )))
             menu.append(pystray.MenuItem(f"{device.replace('_', ' ').title()} Speed", pystray.Menu(
                 *[create_speed_select_menu_item([device], speed) for speed in range(10, 101, 10)]

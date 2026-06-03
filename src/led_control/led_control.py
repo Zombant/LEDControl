@@ -63,6 +63,12 @@ def is_online(device):
     else:
         return None
 
+def get_paletttes(device):
+    return wled_control.get_light_palettes(devices[device]['ip'])
+
+def get_effects(device):
+    return wled_control.get_light_effects(devices[device]['ip'])
+
 def set_state(devices_list, state):
     for device in devices_list:
         if devices[device]['service'] == "wiz":
