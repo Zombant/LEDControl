@@ -29,7 +29,7 @@ def create_light_bulb_image(height, width):
 
 # Scenes
 def create_scene_select_menu_item(devices, scene_name):
-    return pystray.MenuItem(scene_name.replace('_', ' ').title(), lambda: set_scene(devices, scenes[scene_name]))
+    return pystray.MenuItem(scene_name.replace('_', ' ').title(), lambda: set_scene(devices, scene_name))
 
 # Brightness
 def create_brightness_select_menu_item(devices, brightness):

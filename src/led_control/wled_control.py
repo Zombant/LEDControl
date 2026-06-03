@@ -22,6 +22,10 @@ def send_command(ip, payload):
     except:
         print("Failed to send command")
 
+################################################################
+##                         Getters                            ##
+################################################################
+
 def get_light_status(ip):
     try:
         response = requests.get(f"http://{ip}/json/state")
@@ -39,6 +43,9 @@ def get_light_state(ip):
 def get_light_brightness(ip):
     return get_light_status(ip).get("bri")
 
+def get_light_rgb(ip):
+    return get_light_status(ip).get("seg")[0].get("col")[0]
+
 def get_light_effect(ip):
     return get_light_status(ip).get("seg")[0].get("fx")
 
@@ -50,10 +57,6 @@ def get_light_speed(ip):
 
 def get_light_intensity(ip):
     return get_light_status(ip).get("seg")[0].get("ix")
-
-def get_light_rgb(ip):
-    return get_light_status(ip).get("seg")[0].get("col")[0]
-
 
 
 def get_light_palettes(ip):
@@ -78,25 +81,52 @@ def get_light_effects(ip):
         print(f"Failed to get effects for {ip}: {e}")
         return None
 
+################################################################
+##                         Setters                            ##
+################################################################
+
 def set_light_state(ip, state):
     payload = {"on": state}
     send_command(ip, payload)
 
-def set_light_palette(ip, palette_idx):
+def set_light_brightness(ip, brightness):
+    brightness = max(0, min(255, int(brightness)))
+    
+    payload = {"bri": brightness}
+    send_command(ip, payload)
+
+def set_light_rgb(ip, r, g, b):
+    r = max(0, min(255, int(r)))
+    g = max(0, min(255, int(g)))
+    b = max(0, min(255, int(b)))
     payload = {
         "seg": [
             {
-                "pal": int(palette_idx)
+                "col": [
+                    [r, g, b]
+                ]
             }
         ]
     }
     send_command(ip, payload)
+
 
 def set_light_effect(ip, effect_idx):
     payload = {
         "seg": [
             {
                 "fx": int(effect_idx)
+            }
+        ]
+    }
+    send_command(ip, payload)
+
+
+def set_light_palette(ip, palette_idx):
+    payload = {
+        "seg": [
+            {
+                "pal": int(palette_idx)
             }
         ]
     }
@@ -122,37 +152,20 @@ def set_effect_intensity(ip, effect_intensity):
     }
     send_command(ip, payload)
 
-def set_light_brightness(ip, brightness):
-    brightness = max(0, min(255, int(brightness)))
-    
-    payload = {"bri": brightness}
-    send_command(ip, payload)
-
-def set_light_rgb(ip, r, g, b):
-    r = max(0, min(255, int(r)))
-    g = max(0, min(255, int(g)))
-    b = max(0, min(255, int(b)))
-    payload = {
-        "seg": [
-            {
-                "col": [
-                    [r, g, b]
-                ]
-            }
-        ]
-    }
-    send_command(ip, payload)
-
 # Works with both 0-255 and 1900-10091
-def set_light_temp(ip, temp):
-    payload = {
-        "seg": [
-            {
-                "cct": temp
-            }
-        ]
-    }
-    send_command(ip, payload)
+# def set_light_temp(ip, temp):
+#     payload = {
+#         "seg": [
+#             {
+#                 "cct": temp
+#             }
+#         ]
+#     }
+#     send_command(ip, payload)
+
+################################################################
+##                   Command-line Interface                   ##
+################################################################
 
 def list_devices():
     for name, _ in devices.items():

@@ -41,6 +41,9 @@ def send_command(message, ip, port=38899, retries=retry_count):
     print(f"Failed to send command after {retries} attempts", file=sys.stderr)
     return 2
 
+################################################################
+##                         Getters                            ##
+################################################################
 
 def get_light_status(ip, retries=retry_count):
     message = {
@@ -75,8 +78,13 @@ def get_light_rgb(ip, retries=retry_count):
     }
 
     result = send_command(message, ip, retries=retry_count)
-    #TODO: may not have an rgb
-    return (result['result']['r'], result['result']['g'], result['result']['b'])
+
+    # If this device was set via a WiZ scene, it will not have RGB
+    try:
+        return (result['result']['r'], result['result']['g'], result['result']['b'])
+    except KeyError:
+        print("Device does not have RGB values")
+        return None
 
 def get_light_scene(ip, retries=retry_count):
     message = {
@@ -85,8 +93,12 @@ def get_light_scene(ip, retries=retry_count):
     }
 
     result = send_command(message, ip, retries=retry_count)
+    # sceneId will be zero if the device is set via RGB
     return result['result']['sceneId']
-        
+
+################################################################
+##                         Setters                            ##
+################################################################
 
 def set_light_state(ip, state):
     message = {
@@ -96,6 +108,14 @@ def set_light_state(ip, state):
 
     return send_command(message, ip)
     
+
+def set_light_brightness(ip, brightness):
+    message = {
+        "method": "setPilot",
+        "params": { "dimming": brightness }
+    }
+
+    return send_command(message, ip)
 
 def set_light_rgb(ip, r, g, b):
     message = {
@@ -107,14 +127,6 @@ def set_light_rgb(ip, r, g, b):
     
     return send_command(message, ip)
 
-def set_light_temp(ip, temp, dimming=100):
-    message = {
-        "method": "setPilot",
-        "params": { "temp": temp,
-                    "dimming": dimming}
-    }
-    
-    return send_command(message, ip)
 
 def set_light_scene(ip, scene_id, dimming=100):
     message = {
@@ -125,13 +137,18 @@ def set_light_scene(ip, scene_id, dimming=100):
 
     return send_command(message, ip)
 
-def set_light_brightness(ip, brightness):
-    message = {
-        "method": "setPilot",
-        "params": { "dimming": brightness }
-    }
+# def set_light_temp(ip, temp, dimming=100):
+#     message = {
+#         "method": "setPilot",
+#         "params": { "temp": temp,
+#                     "dimming": dimming}
+#     }
+    
+#     return send_command(message, ip)
 
-    return send_command(message, ip)
+################################################################
+##                   Command-line Interface                   ##
+################################################################
 
 def list_devices():
     for name, _ in devices.items():

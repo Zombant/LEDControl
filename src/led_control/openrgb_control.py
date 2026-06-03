@@ -9,11 +9,12 @@ import argparse
 import sys
 import openrgb
 
+################################################################
+##                   OpenRGB Server Setup                     ##
+################################################################
+
 host = "localhost"
 port = 6742
-
-# Check on process:
-# sudo ss -tulpn | grep :6742
 
 def is_server_running(host=host, port=port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -30,22 +31,17 @@ def start_openrgb_server():
     cmd = ["openrgb", "--server", "--startminimized"]
     # Windows example:
     # cmd = [r"C:\Program Files\OpenRGB\OpenRGB.exe", "--server", "--startminimized"]
-
     process = subprocess.Popen(
         cmd, 
         stdout=subprocess.DEVNULL, 
         stderr=subprocess.DEVNULL
     )
-    
     time.sleep(2)
-
     return process
 
-def set_state(device, state):
-    if state == True:
-        device.set_color(RGBColor(128, 128, 128))
-    else:
-        device.set_color(RGBColor(0, 0, 0))
+################################################################
+##                         Getters                            ##
+################################################################
 
 def get_state(device):
     if all(colors == RGBColor(0, 0, 0) for colors in device.colors):
@@ -53,14 +49,43 @@ def get_state(device):
     else:
         return True
 
+def get_brightness(device):
+    raise NotImplementedError
+
 def get_rgb(device):
     return (device.colors[0].red, device.colors[0].green, device.colors[0].blue)
+
+
+def set_state(device, state):
+    if state == True:
+        device.set_color(RGBColor(128, 128, 128))
+    else:
+        device.set_color(RGBColor(0, 0, 0))
+
+################################################################
+##                         Setters                            ##
+################################################################
+
+# TODO: Needs work
+def set_brightness(device, brightness):
+    factor = max(0, brightness) / 100.0
+    current_colors = device.colors[0]
+    new_colors = RGBColor(
+        min(255, int(current_colors.red * factor)),
+        min(255, int(current_colors.green * factor)),
+        min(255, int(current_colors.blue * factor))
+    )
+    set_color(device, new_colors)
 
 def set_rgb(device, r, g, b):
     device.set_color(RGBColor(r, g, b))
 
 def set_color(device, color):
     device.set_color(color)
+
+################################################################
+##                   Command-line Interface                   ##
+################################################################
 
 def list_devices(client):
     for device in client.devices:
@@ -129,14 +154,7 @@ if __name__ == "__main__":
         elif args.action == "brightness":
             if len(args.params) != 1:
                 print_help(parser)
-            factor = max(0, int(args.params[0])) / 100.0
-            current_colors = motherboard.colors[0]
-            new_colors = RGBColor(
-                min(255, int(current_colors.red * factor)),
-                min(255, int(current_colors.green * factor)),
-                min(255, int(current_colors.blue * factor))
-            )
-            set_color(device, new_colors)
+            set_brightness(motherboard, args.params[0])
 
         else:
             print_help(parser)
