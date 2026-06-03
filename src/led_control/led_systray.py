@@ -9,14 +9,12 @@ from led_control import *
 
 import wled_control
 
-from common import devices, scenes, lighting_groups
+from common import devices, scenes, lighting_groups, project_dir
 
 if os.name == 'nt':
     import ctypes
     #Set process name for Windows
     ctypes.windll.kernel32.SetConsoleTitleW("LED Control")
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
 
 icon = None
 
@@ -25,7 +23,7 @@ online_devices = []
 
 # Load light bulb image for the system tray icon
 def create_light_bulb_image(height, width):
-    image = Image.open(os.path.join(script_dir, "light_bulb.png"))
+    image = Image.open(os.path.join(project_dir, "images/light_bulb.png"))
     #image = image.resize((width, height))
     return image
 
