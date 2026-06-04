@@ -62,9 +62,6 @@ def is_online(device):
             return False
         else:
             return True
-    else:
-        raise ServiceNotFoundException()
-
 
 ################################################################
 ##                         Getters                            ##
@@ -81,17 +78,19 @@ def get_scenes():
 
 def get_paletttes(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_palettes(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def get_effects(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_effects(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def get_state(device):
     check_device_valid([device])
@@ -101,35 +100,44 @@ def get_state(device):
         return wled_control.get_light_state(devices[device]['ip'])
     elif devices[device]['service'] == "openrgb":
         return openrgb_control.get_state(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
-    else:
-        raise ServiceNotFoundException()
 
 def get_brightness(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wiz":
-        return wiz_control.get_light_brightness(devices[device]['ip'])
+        # Return None if the device is disconnected, and 0 if off
+        state = wiz_control.get_light_state(devices[device]['ip'])
+        if state:
+            bri = wiz_control.get_light_brightness(devices[device]['ip'])
+        elif state == None:
+            return None
+        else:
+            bri = 0
+        return percent_to_byte(bri)
     elif devices[device]['service'] == "wled":
-        bri = wled_control.get_light_brightness(devices[device]['ip'])
-        return int((((bri - 0) / (255 - 0)) * (100 - 0)))
+        return wled_control.get_light_brightness(devices[device]['ip'])
     elif devices[device]['service'] == "openrgb":
-        return NotImplementedError
-    else:
-        raise ServiceNotFoundException()
+        raise NotImplementedError
 
 def get_rgb(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wiz":
-        return wiz_control.get_light_rgb(devices[device]['ip'])
+        rgb = wiz_control.get_light_rgb(devices[device]['ip'])
+        # Check that we received an RGB
+        if rgb == None:
+            raise NoRGBException()
+        else:
+            return rgb
     elif devices[device]['service'] == "wled":
         return wled_control.get_light_rgb(devices[device]['ip'])
     elif devices[device]['service'] == "openrgb":
         return openrgb_control.get_rgb(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
-    else:
-        raise ServiceNotFoundException()
 
 # For WiZ, the scene will be directly checked. For others, the rgb associated with that scene will be checked
 def get_scene(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wiz":
         scene_id = wiz_control.get_light_scene(devices[device]['ip'])
         # Check if this was a custom scene and if so, check via rgb:
@@ -140,49 +148,55 @@ def get_scene(device):
             return next((scene_name for scene_name, scene_data in scenes.items() if scenes[scene_name]["wiz_id"] == scene_id), None)
     elif devices[device]['service'] == "wled":
         rgb = wled_control.get_light_rgb(devices[device]['ip'])
-        return next((scene_name for scene_name, scene_data in scenes.items()
-            if scene_data["r"] == rgb[0] and scene_data["g"] == rgb[1] and scene_data["b"] == rgb[2]), None)
+        if rgb == None:
+            return None
+        else:
+            return next((scene_name for scene_name, scene_data in scenes.items()
+                if scene_data["r"] == rgb[0] and scene_data["g"] == rgb[1] and scene_data["b"] == rgb[2]), None)
 
     elif devices[device]['service'] == "openrgb":
         rgb = openrgb_control.get_rgb(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
         return next((scene_name for scene_name, scene_data in scenes.items()
             if scene_data["r"] == rgb[0] and scene_data["g"] == rgb[1] and scene_data["b"] == rgb[2]), None)
-    else:
-        raise ServiceNotFoundException()
 
 
 def get_effect(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_effect(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def get_palette(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_palette(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def get_speed(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_speed(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def get_intensity(device):
     check_device_valid([device])
+    check_device_is_light([device])
     if devices[device]['service'] == "wled":
         return wled_control.get_light_intensity(devices[device]['ip'])
     else:
-        raise WLEDOnlyException()
-
+        raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 ################################################################
 ##                         Setters                            ##
 ################################################################
+
+# Some exceptions will not raised if multiple devices (groups) are being set
 
 def set_state(devices_list, state):
     check_device_valid(devices_list)
@@ -198,16 +212,32 @@ def set_brightness(devices_list, brightness):
     check_device_valid(devices_list)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wiz":
-            result_code = wiz_control.set_light_brightness(devices[device]['ip'], brightness)
+            result_code = wiz_control.set_light_brightness(devices[device]['ip'], byte_to_percent(brightness))
         elif devices[device]['service'] == "wled":
-            wled_control.set_light_brightness(devices[device]['ip'], (((brightness - 0) / (100 - 0)) * (255 - 0)))
+            wled_control.set_light_brightness(devices[device]['ip'], brightness)
         elif devices[device]['service'] == "openrgb":
             openrgb_control.set_brightness(openrgb_client.get_devices_by_name(devices[device]['ip'])[0], brightness)
 
 def set_rgb(devices_list, r, g, b):
-    raise NotImplementedError
+    check_device_valid(devices_list)
+    for device in devices_list:
+        if devices[device]['type'] != "light":
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
+        if devices[device]['service'] == "wiz":
+            result_code = wiz_control.set_light_rgb(devices[device]['ip'], r, g, b)
+        elif devices[device]['service'] == "wled":
+            wled_control.set_light_rgb(devices[device]['ip'], r, g, b)
+        elif devices[device]['service'] == "openrgb":
+            openrgb_control.set_rgb(openrgb_client.get_devices_by_name(devices[device]['ip'])[0], r, g, b)
+
 
 # Scenes are only available on wiz devices but are emulated for RGB devices
 def set_scene(devices_list, scene_name):
@@ -215,7 +245,10 @@ def set_scene(devices_list, scene_name):
     check_scene_valid(scene_name)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wiz":
             # Handle custom scenes
             if scenes[scene_name]["wiz_id"] == -1:
@@ -235,30 +268,54 @@ def set_effect(devices_list: list[str], effect_idx):
     check_device_valid(devices_list)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wled":
             wled_control.set_light_effect(devices[device]['ip'], effect_idx)
+        else:
+            if len(devices_list) == 1:
+                raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def set_palette(devices_list, palette_idx):
     check_device_valid(devices_list)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wled":
             wled_control.set_light_palette(devices[device]['ip'], palette_idx)
+        else:
+            if len(devices_list) == 1:
+                raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def set_speed(devices_list, speed):
     check_device_valid(devices_list)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wled":
             wled_control.set_effect_speed(devices[device]['ip'], (((speed - 0) / (100 - 0)) * (255 - 0)))
+        else:
+            if len(devices_list) == 1:
+                raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")
 
 def set_intensity(devices_list, speed):
     check_device_valid(devices_list)
     for device in devices_list:
         if devices[device]['type'] != "light":
-            continue
+            if len(devices_list) == 1:
+                check_device_is_light([device])
+            else:
+                continue
         if devices[device]['service'] == "wled":
             wled_control.set_effect_intensity(devices[device]['ip'], (((speed - 0) / (100 - 0)) * (255 - 0)))
+        else:
+            if len(devices_list) == 1:
+                raise InvalidDeviceException(f"Service {devices[device]['service']} is not allowed for this command.")

@@ -44,9 +44,11 @@ async def get_device_brightness(device: DevicesEnum):
 @app.get("/device/{device}/rgb")
 async def get_device_state(device: DevicesEnum):
     try:
-        return {"state": get_rgb(device.value)}
+        return {"rgb": get_rgb(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except NoRGBException as e:
+        raise HTTPException(status_code=405, detail="This device does not currently have RGB values. It may be in scene mode or offline.")
 
 @app.get("/device/{device}/scene")
 async def get_device_scene(device: DevicesEnum):
@@ -61,8 +63,6 @@ async def get_device_effect(device: DevicesEnum):
         return {"effect": get_effect(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.get("/device/{device}/effects")
 async def get_device_effects(device: DevicesEnum):
@@ -70,8 +70,6 @@ async def get_device_effects(device: DevicesEnum):
         return {"effects": get_effects(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.get("/device/{device}/palettes")
 async def get_device_palettes(device: DevicesEnum):
@@ -79,8 +77,6 @@ async def get_device_palettes(device: DevicesEnum):
         return {"palettes": get_palettes(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.get("/device/{device}/palette")
 async def get_device_palette(device: DevicesEnum):
@@ -88,8 +84,6 @@ async def get_device_palette(device: DevicesEnum):
         return {"palette": get_palette(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.get("/device/{device}/speed")
 async def get_device_speed(device: DevicesEnum):
@@ -97,8 +91,6 @@ async def get_device_speed(device: DevicesEnum):
         return {"speed": get_speed(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.get("/device/{device}/intensity")
 async def get_device_intensity(device: DevicesEnum):
@@ -106,8 +98,6 @@ async def get_device_intensity(device: DevicesEnum):
         return {"intensity": get_intensity(device.value)}
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 
 @app.post("/device/{device}/state")
@@ -145,10 +135,7 @@ async def set_device_effect(device: DevicesEnum, effect: int):
     try:
         set_effect([device.value], effect)
     except InvalidDeviceException as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
-    
+        raise HTTPException(status_code=404, detail=str(e))    
 
 @app.post("/device/{device}/palette")
 async def set_device_palette(device: DevicesEnum, palette: int):
@@ -156,8 +143,6 @@ async def set_device_palette(device: DevicesEnum, palette: int):
         set_palette([device.value], palette)
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.post("/device/{device}/speed")
 async def set_device_speed(device: DevicesEnum, speed: int):
@@ -165,8 +150,6 @@ async def set_device_speed(device: DevicesEnum, speed: int):
         set_speed([device.value], speed)
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
 
 @app.post("/device/{device}/intensity")
 async def set_device_intensity(device: DevicesEnum, intensity: int):
@@ -174,10 +157,6 @@ async def set_device_intensity(device: DevicesEnum, intensity: int):
         set_intensity([device.value], intensity)
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except WLEDOnlyException:
-        raise HTTPException(status_code=405, detail="This function is only available for WLED devices.")
-
-
 
 
 if __name__ == "__main__":

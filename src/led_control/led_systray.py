@@ -33,7 +33,7 @@ def create_scene_select_menu_item(devices, scene_name):
 
 # Brightness
 def create_brightness_select_menu_item(devices, brightness):
-    return pystray.MenuItem(f"{brightness}%", lambda: set_brightness(devices, brightness))
+    return pystray.MenuItem(f"{brightness}%", lambda: set_brightness(devices, percent_to_byte(brightness)))
 
 # Palettes
 def create_palette_select_menu_item(devices, palette_name, palette_idx):

@@ -38,25 +38,32 @@ def get_light_status(ip):
         return None
 
 def get_light_state(ip):
-    return get_light_status(ip).get("on")
+    result = get_light_status(ip)
+    return result.get("on") if result else None
 
 def get_light_brightness(ip):
-    return get_light_status(ip).get("bri")
+    result = get_light_status(ip)
+    return result.get("bri") if result else None
 
 def get_light_rgb(ip):
-    return get_light_status(ip).get("seg")[0].get("col")[0]
+    result = get_light_status(ip)
+    return result.get("seg")[0].get("col")[0] if result else None
 
 def get_light_effect(ip):
-    return get_light_status(ip).get("seg")[0].get("fx")
+    result = get_light_status(ip)
+    return result.get("seg")[0].get("fx") if result else None
 
 def get_light_palette(ip):
-    return get_light_status(ip).get("seg")[0].get("pal")
+    result = get_light_status(ip)
+    return result.get("seg")[0].get("pal") if result else None
 
 def get_light_speed(ip):
-    return get_light_status(ip).get("seg")[0].get("sx")
+    result = get_light_status(ip)
+    return result.get("seg")[0].get("sx") if result else None
 
 def get_light_intensity(ip):
-    return get_light_status(ip).get("seg")[0].get("ix")
+    result = get_light_status(ip)
+    return result.get("seg")[0].get("ix") if result else None
 
 
 def get_light_palettes(ip):
@@ -151,17 +158,6 @@ def set_effect_intensity(ip, effect_intensity):
         ]
     }
     send_command(ip, payload)
-
-# Works with both 0-255 and 1900-10091
-# def set_light_temp(ip, temp):
-#     payload = {
-#         "seg": [
-#             {
-#                 "cct": temp
-#             }
-#         ]
-#     }
-#     send_command(ip, payload)
 
 ################################################################
 ##                   Command-line Interface                   ##

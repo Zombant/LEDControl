@@ -35,11 +35,11 @@ def send_command(message, ip, port=38899, retries=retry_count):
             print(f"Timeout occurred, retrying... ({attempt + 1}/{retries})", file=sys.stderr)
         except Exception as e:
             print(f"Error sending command: {e}", file=sys.stderr)
-            return 1
+            return None
 
     sock.close()
     print(f"Failed to send command after {retries} attempts", file=sys.stderr)
-    return 2
+    return None
 
 ################################################################
 ##                         Getters                            ##
@@ -50,7 +50,6 @@ def get_light_status(ip, retries=retry_count):
         "method": "getPilot",
         "params": { }
     }
-
     return send_command(message, ip, retries=retry_count)
 
 def get_light_state(ip, retries=retry_count):
@@ -58,32 +57,28 @@ def get_light_state(ip, retries=retry_count):
         "method": "getPilot",
         "params": { }
     }
-
     result = send_command(message, ip, retries=retry_count)
-    return result['result']['state']
+    return result['result']['state'] if result else None
 
 def get_light_brightness(ip, retries=retry_count):
     message = {
         "method": "getPilot",
         "params": { }
     }
-
     result = send_command(message, ip, retries=retry_count)
-    return result['result']['dimming']
+    return result['result']['dimming'] if result else None
 
 def get_light_rgb(ip, retries=retry_count):
     message = {
         "method": "getPilot",
         "params": { }
     }
-
     result = send_command(message, ip, retries=retry_count)
 
     # If this device was set via a WiZ scene, it will not have RGB
     try:
-        return (result['result']['r'], result['result']['g'], result['result']['b'])
+        return (result['result']['r'], result['result']['g'], result['result']['b']) if result else None
     except KeyError:
-        print("Device does not have RGB values")
         return None
 
 def get_light_scene(ip, retries=retry_count):
@@ -91,10 +86,10 @@ def get_light_scene(ip, retries=retry_count):
         "method": "getPilot",
         "params": { }
     }
-
     result = send_command(message, ip, retries=retry_count)
+
     # sceneId will be zero if the device is set via RGB
-    return result['result']['sceneId']
+    return result['result']['sceneId'] if result else None
 
 ################################################################
 ##                         Setters                            ##
@@ -105,7 +100,6 @@ def set_light_state(ip, state):
         "method": "setState",
         "params": {"state": state}
     }
-
     return send_command(message, ip)
     
 
@@ -114,7 +108,6 @@ def set_light_brightness(ip, brightness):
         "method": "setPilot",
         "params": { "dimming": brightness }
     }
-
     return send_command(message, ip)
 
 def set_light_rgb(ip, r, g, b):
@@ -124,7 +117,6 @@ def set_light_rgb(ip, r, g, b):
                     "g": g,
                     "b": b}
     }
-    
     return send_command(message, ip)
 
 
@@ -134,17 +126,7 @@ def set_light_scene(ip, scene_id, dimming=100):
         "params": { "sceneId": scene_id,
                     "dimming": dimming}
     }
-
     return send_command(message, ip)
-
-# def set_light_temp(ip, temp, dimming=100):
-#     message = {
-#         "method": "setPilot",
-#         "params": { "temp": temp,
-#                     "dimming": dimming}
-#     }
-    
-#     return send_command(message, ip)
 
 ################################################################
 ##                   Command-line Interface                   ##
