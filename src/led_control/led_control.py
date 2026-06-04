@@ -34,6 +34,12 @@ def start_openrgb_server(max_attempts=10):
             attempt += 1
             time.sleep(0.5)
 
+################################################################
+## TODO: Functions to modify settings.json (add/remove things) #
+## These functions will call functions in common that actually do things #
+## Default wiz scenes will be read-only                        #
+################################################################
+
 
 ################################################################
 ## These functions actually perform the action on the devices ##
@@ -66,15 +72,6 @@ def is_online(device):
 ################################################################
 ##                         Getters                            ##
 ################################################################
-
-def get_devices():
-    return devices.items()
-
-def get_groups():
-    return lighting_groups.items()
-
-def get_scenes():
-    return scenes.items()
 
 def get_paletttes(device):
     check_device_valid([device])

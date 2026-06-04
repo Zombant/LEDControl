@@ -36,6 +36,11 @@ with open(settings_path, "r") as f:
     lighting_groups = data["lighting_groups"]
     scenes = data["scenes"]
 
+################################################################
+## TODO: Functions to modify settings.json (add/remove things)##
+## Default wiz scenes will be read-only                       ##
+################################################################
+
 
 ################################################################
 ##                      Common Functions                      ##

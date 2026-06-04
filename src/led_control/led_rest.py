@@ -9,23 +9,30 @@ from common import *
 
 # Limit the choosable items in the Swagger UI (creates a dropdown)
 DevicesEnum = Enum("DevicesEnum", {device_name: device_name for device_name in devices.keys()})
+GroupsEnum = Enum("GroupsEnum", {group_name: group_name for group_name in lighting_groups.keys()})
 ScenesEnum = Enum("ScenesEnum", {scene_name: scene_name for scene_name in scenes.keys()})
 
 app = FastAPI()
 
+################################################################
+##                       List Endpoints                       ##
+################################################################
+
 @app.get("/list/devices")
 async def list_devices():
-    return {"devices": get_devices()}
+    return {"devices": devices.items()}
 
 @app.get("/list/groups")
 async def list_groups():
-    return {"groups": get_groups()}
+    return {"groups": lighting_groups.items()}
 
 @app.get("/list/scenes")
 async def list_scenes():
-    return {"scenes": get_scenes()}
+    return {"scenes": scenes.items()}
 
-
+################################################################
+##                      Device Endpoints                      ##
+################################################################
 
 @app.get("/device/{device}/state")
 async def get_device_state(device: DevicesEnum):
@@ -155,6 +162,76 @@ async def set_device_speed(device: DevicesEnum, speed: int):
 async def set_device_intensity(device: DevicesEnum, intensity: int):
     try:
         set_intensity([device.value], intensity)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+################################################################
+##                       Group Endpoints                      ##
+################################################################
+
+@app.post("/group/{group}/state")
+async def set_group_state(group: GroupsEnum, state: bool):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_state(devices_in_group, state)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/brightness")
+async def set_group_brightness(group: GroupsEnum, brightness: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_brightness(devices_in_group, brightness)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/rgb")
+async def set_group_rgb(group: GroupsEnum, r: int, g: int, b: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_rgb(devices_in_group, r, g, b)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/scene")
+async def set_group_scene(group: GroupsEnum, scene: ScenesEnum):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_scene(devices_in_group, scene.value)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InvalidSceneException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/effect")
+async def set_group_effect(group: GroupsEnum, effect: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_effect(devices_in_group, effect)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))    
+
+@app.post("/group/{group}/palette")
+async def set_group_palette(group: GroupsEnum, palette: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_palette(devices_in_group, palette)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/speed")
+async def set_group_speed(group: GroupsEnum, speed: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_speed(devices_in_group, speed)
+    except InvalidDeviceException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/group/{group}/intensity")
+async def set_group_intensity(group: GroupsEnum, intensity: int):
+    devices_in_group = lighting_groups[group.value]
+    try:
+        set_intensity(devices_in_group, intensity)
     except InvalidDeviceException as e:
         raise HTTPException(status_code=404, detail=str(e))
 
