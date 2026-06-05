@@ -6,13 +6,6 @@ import openrgb_control
 from openrgb import OpenRGBClient
 from openrgb.utils import DeviceType
 
-# def test_result_code(result_code, title):
-#     global icon
-#     if result_code == 1:
-#         icon.notify(f"Error sending command", title)
-#     if result_code == 2:
-#         icon.notify(f"Failed to send command after {wiz_control.retry_count} attempts", title)
-
 # TODO: Move this stuff to openrgb_control
 openrgb_client = None
 
@@ -114,7 +107,7 @@ def get_brightness(device):
     elif devices[device]['service'] == "wled":
         return wled_control.get_light_brightness(devices[device]['ip'])
     elif devices[device]['service'] == "openrgb":
-        raise NotImplementedError
+        return openrgb_control.get_brightness(openrgb_client.get_devices_by_name(devices[device]['ip'])[0])
 
 def get_rgb(device):
     check_device_valid([device])

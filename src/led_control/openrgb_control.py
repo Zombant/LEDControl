@@ -2,11 +2,13 @@
 
 from openrgb import OpenRGBClient
 from openrgb.utils import RGBColor, DeviceType
+from common import *
 import socket
 import subprocess
 import time
 import argparse
 import sys
+import colorsys
 import openrgb
 
 ################################################################
@@ -15,6 +17,9 @@ import openrgb
 
 host = "localhost"
 port = 6742
+
+# Keeps track of the current color (hue and saturation) for brightness adjustments
+hue_sat_dict = {}
 
 def is_server_running(host=host, port=port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -50,38 +55,73 @@ def get_state(device):
         return True
 
 def get_brightness(device):
-    raise NotImplementedError
+    r, g, b = device.colors[0].red, device.colors[0].green, device.colors[0].blue
+    _, _, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+    return percent_to_byte(v * 100)
 
 def get_rgb(device):
     return (device.colors[0].red, device.colors[0].green, device.colors[0].blue)
 
-
 def set_state(device, state):
+    # If the device is already on and set state is True, return to avoid resetting brightness
+    if get_state(device) and state:
+        return
     if state == True:
-        device.set_color(RGBColor(128, 128, 128))
+        # If there is a color saved, use that
+        if device.name in hue_sat_dict.keys():
+            h = hue_sat_dict.get(device.name).get("h")
+            s = hue_sat_dict.get(device.name).get("s")
+            v = 1
+            hue_sat_dict.update({device.name: {"h": h, "s": s, "v": v}})
+            r, g, b = colorsys.hsv_to_rgb(h, s, v)
+            device.set_color(RGBColor(int(r*255), int(g*255), int(b*255)))
+        else:
+            r = 255; g = 255; b = 255
+            h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+            hue_sat_dict.update({device.name: {"h": h, "s": s, "v": v}})
+
+            device.set_color(RGBColor(r, g, b))
     else:
-        device.set_color(RGBColor(0, 0, 0))
+        set_brightness(device, 0)
 
 ################################################################
 ##                         Setters                            ##
 ################################################################
 
-# TODO: Needs work
 def set_brightness(device, brightness):
-    factor = max(0, brightness) / 100.0
-    current_colors = device.colors[0]
-    new_colors = RGBColor(
-        min(255, int(current_colors.red * factor)),
-        min(255, int(current_colors.green * factor)),
-        min(255, int(current_colors.blue * factor))
-    )
-    set_color(device, new_colors)
+    brightness = max(0, min(255, int(brightness)))
+    # If this device already has a hue and saturation saved, use that. Otherwise poll for color
+    if device.name in hue_sat_dict.keys():
+        h = hue_sat_dict.get(device.name).get("h")
+        s = hue_sat_dict.get(device.name).get("s")
+    else:
+        r, g, b = device.colors[0].red, device.colors[0].green, device.colors[0].blue
+        h, s, _ = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+
+    # Brightness is value
+    v = brightness / 255
+    hue_sat_dict.update({device.name: {"h": h, "s": s, "v": v}})
+
+    # Convert back to rgb
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+    device.set_color(RGBColor(int(r*255), int(g*255), int(b*255)))
 
 def set_rgb(device, r, g, b):
-    device.set_color(RGBColor(r, g, b))
+    r = max(0, min(255, int(r)))
+    g = max(0, min(255, int(g)))
+    b = max(0, min(255, int(b)))
 
-def set_color(device, color):
-    device.set_color(color)
+    # Save the hue and saturation to avoid quantizing of values
+    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+    # If this device already has a color value (brightness) saved, use that
+    if device.name in hue_sat_dict.keys():
+        v = hue_sat_dict.get(device.name).get("v")
+
+    hue_sat_dict.update({device.name: {"h": h, "s": s, "v": v}})
+    # Convert back to rgb
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+
+    device.set_color(RGBColor(int(r*255), int(g*255), int(b*255)))
 
 ################################################################
 ##                   Command-line Interface                   ##
