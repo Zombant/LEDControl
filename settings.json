@@ -7,29 +7,34 @@
             "enabled": false
         },
         "marble_lamp": {
-            "ip": "192.168.1.239",
+            "ip": "192.168.1.91",
             "type": "light",
-            "service": "wiz"
+            "service": "wiz",
+            "enabled": true
         },
         "black_lamp": {
-            "ip": "192.168.1.195",
+            "ip": "192.168.1.47",
             "type": "light",
-            "service": "wiz"
+            "service": "wiz",
+            "enabled": true
         },
         "bookshelf_lamp": {
             "ip": "192.168.1.196",
             "type": "light",
-            "service": "wiz"
+            "service": "wiz",
+            "enabled": false
         },
         "led_bar": {
-            "ip": "192.168.1.216",
+            "ip": "192.168.1.189",
             "type": "light",
-            "service": "wled"
+            "service": "wled",
+            "enabled": true
         },
         "motherboard": {
             "ip": "B650 GAMING X AX V2",
             "type": "light",
-            "service": "openrgb"
+            "service": "openrgb",
+            "enabled": true
         }
     },
     

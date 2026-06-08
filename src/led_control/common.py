@@ -33,6 +33,11 @@ settings_path = os.path.join(project_dir, "settings.json")
 with open(settings_path, "r") as f:
     data = json.load(f)
     devices = data["devices"]
+    # Filter for enabled devices
+    devices = {
+        name: details for name, details in devices.items()
+        if details.get("enabled") == True
+    }
     lighting_groups = data["lighting_groups"]
     scenes = data["scenes"]
 
