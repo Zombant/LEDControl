@@ -27,6 +27,15 @@ def start_openrgb_server(max_attempts=10):
             attempt += 1
             time.sleep(0.5)
 
+def stop_openrgb_server():
+    openrgb_client.disconnect()
+    cmd = ["pkill", "openrgb"]
+    process = subprocess.Popen(
+        cmd, 
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL
+    )
+
 ################################################################
 ## TODO: Functions to modify settings.json (add/remove things) #
 ## These functions will call functions in common that actually do things #

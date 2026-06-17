@@ -2,6 +2,7 @@ import pystray
 from PIL import Image, ImageDraw
 import threading
 import os
+import sys
 
 from common import devices, scenes, lighting_groups, project_dir
 import led_control
@@ -161,13 +162,19 @@ def setup_tray():
     
     icon.menu = pystray.Menu(*menu_items)
     icon.run()
-    
+
+def quit():
+    stop_openrgb_server()
+    icon.stop()
 
 # Run the system tray icon in a separate thread
 if __name__ == "__main__":
     
-    # Set up OpenRGB
-    start_openrgb_server()
+    # Set up OpenRGB. An openrgb service should already be running on 0.0.0.0:6742 if you omit the "--start-server option"
+    if next((True for device_info in devices.values() if device_info.get("service") == "openrgb"), False):
+        if len(sys.argv) > 1:
+            if sys.argv[1] == "--start-server":
+                start_openrgb_server()
 
     tray_thread = threading.Thread(target=setup_tray)
     tray_thread.start()

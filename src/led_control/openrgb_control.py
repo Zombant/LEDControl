@@ -15,7 +15,7 @@ import openrgb
 ##                   OpenRGB Server Setup                     ##
 ################################################################
 
-host = "localhost"
+host = "0.0.0.0"
 port = 6742
 
 # Keeps track of the current color (hue and saturation) for brightness adjustments
